@@ -101,7 +101,7 @@ def _(conn, mo):
 @app.cell
 def _(mo):
     mo.md(r"""
-    Suite à la première analyse de lensemble des données, quelles sont les colonnes qui peuvent être exploitées en tant quaxe d'analyse ?
+    Suite à la première analyse de l'ensemble des données, quelles sont les colonnes qui peuvent être exploitées en tant qu'axe d'analyse ?
     """)
     return
 
@@ -109,11 +109,9 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 3. Retravaillons les données
+    ## 3. Première réduction des données
 
-    Vous devez avoir 12 fichiers au format .csv
-
-    Vous allez créer la première table avec l'ensemble des données de lannée que vous avec choisi.
+    A partir des 12 fichiers, représentant l'activité des locations de vélos pour chaque mois sur un an, vous allez créer la première table avec l'ensemble des données de lannée que vous avec choisi.
     """)
     return
 
@@ -142,7 +140,7 @@ def _(conn, mo):
     return (fact_rentals,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     Utilisez la fonction Summarize pour évaluez le contenu de chaque colonnes :
@@ -161,7 +159,7 @@ def _(conn, fact_rentals, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     Suite à l'analyse des colonnes, vous pouvez créer la première table de dimension :
@@ -199,14 +197,6 @@ def _(conn, mo):
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""
-    Vous faites ensuite une copie de ces tables dans un fichier au format .parquet
-    """)
-    return
-
-
-@app.cell
 def _(conn, dim_station, fact_rentals, mo):
     _df = mo.sql(
         f"""
@@ -215,14 +205,6 @@ def _(conn, dim_station, fact_rentals, mo):
         """,
         engine=conn
     )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    Dans un second temps, vous faites de même avec les fichiers bruts
-    """)
     return
 
 
@@ -239,131 +221,24 @@ def _(conn, mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Que constatez-vous sur les temps de traitement et la taille des fichiers ?
+    ## 4. Cas pratique :
+
+    Vous avez agrégé vos données dans une table de dimension et une table de Fait (correspondant au layer Silver).
+    Vous avez remarqué que la taille du parquet et le nombre de données a diminué.
+
+    Désormais, vous allez proposer plusieurs cas d'usage suite à l'exploration des donnés que vous allez effectuer sur les données de Chicago (Correspondant au layer Gold).
+
+    L'attendu est le suivant :
+    - Proposer une agrégation des données issues de la table de Fait et de la table de dimension.
+    - Expliquer la démarche de votre table Gold en adéquation avec l'étude des locations de vélos dans Chicago.
+
+    Lorsque votre réduction de dimension est terminée, vous exécutez le script ci-dessous pour envoyer votre fichier parquet sur un bucket.
+
+    NB : N'oubliez de changer la bonne année pour être au bon endroit
     """)
-    return
-
-
-@app.cell
-def _(conn, fact_rentals, mo):
-    _df = mo.sql(
-        f"""
-        copy (
-            select
-                annee,
-                DATE_TRUNC('month', started_at) as dt_mois,
-                start_station_id,
-                end_station_id,
-                member_casual,
-                DATE_TRUNC('hour', started_at) as started_at_hour,
-                count(1) as nb_trips,
-                sum(duration) as duration,
-            from fact_rentals
-            group by all
-        ) to 'data/fact_rentals_hourly_grain.parquet'
-        """,
-        engine=conn
-    )
-    return
-
-
-@app.cell
-def _(conn, fact_rentals, mo):
-    _df = mo.sql(
-        f"""
-        copy (
-            select
-                annee,
-                DATE_TRUNC('month', started_at) as dt_mois,
-                start_station_id,
-                end_station_id,
-                member_casual,
-                DATE_TRUNC('day', started_at) as started_date,
-                count(1) as nb_trips,
-                sum(duration) as duration,
-            from fact_rentals
-            group by all
-        ) to 'data/fact_rentals_day_grain.parquet'
-        """,
-        engine=conn
-    )
-    return
-
-
-@app.cell
-def _(conn, fact_rentals, mo):
-    _df = mo.sql(
-        f"""
-        copy (
-            select
-                annee,
-                DATE_TRUNC('month', started_at) as dt_mois,
-                start_station_id,
-                -- member_casual,
-                DATE_TRUNC('day', started_at) as started_date,
-                count(1) as nb_trips,
-                sum(duration) as duration,
-            from fact_rentals
-            group by all
-        ) to 'data/fact_rentals_day_grain_no_od.parquet'
-        """,
-        engine=conn
-    )
-    return
-
-
-@app.cell
-def _(
-    conn,
-    dim_station,
-    fact_rentals,
-    mo,
-    station_ends_recap,
-    station_starts_recap,
-):
-    _df = mo.sql(
-        f"""
-        copy (
-
-        with station_starts_recap as (
-            select
-                DATE_TRUNC('day', started_at) as dt,
-                start_station_id as station_id,
-                count(1) as nb_starts,
-                sum(duration) as sum_duration_starts,
-                COUNT_IF(member_casual='casual') as nb_starts_casual,
-                sum(duration) FILTER (member_casual='casual') as sum_duration_casual_starts,
-            from fact_rentals
-            group by all
-        ), station_ends_recap as (
-            select
-                DATE_TRUNC('day', started_at) as dt,
-                end_station_id as station_id,
-                count(1) as nb_ends,
-                sum(duration) as sum_duration_ends,
-                COUNTIF(member_casual='casual') as nb_ends_casual,
-                sum(duration) FILTER (member_casual='casual') as sum_duration_casual_ends,
-            from fact_rentals
-            group by all
-        )
-        select
-        	coalesce(starts.dt, ends.dt) as dt,
-        	coalesce(starts.station_id, ends.station_id) as station_id,
-            dim_station.nom,
-            starts.* exclude(dt, station_id),
-            ends.* exclude(dt, station_id),
-        from station_starts_recap as starts
-        full outer join station_ends_recap as ends using(dt, station_id)
-        --> à risque ... sur QUEL station_id a-t-il vraiment fait la jointure ...
-        left join dim_station using(station_id)
-
-        ) to 'data/station_daily_recap.parquet'
-        """,
-        engine=conn
-    )
     return
 
 
