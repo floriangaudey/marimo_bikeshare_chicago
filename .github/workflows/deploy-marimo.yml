@@ -29,7 +29,7 @@ jobs:
         run: uv sync --frozen
 
       - name: 📄 Export notebook
-        run: uv run marimo export html-wasm marimo_1ere_explo_bixi_duckdb.py -o www --mode edit
+        run: uv run marimo export html-wasm marimo_chicago_rentals.py -o www --mode edit
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
