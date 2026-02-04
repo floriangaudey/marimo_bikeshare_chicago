@@ -1,0 +1,16 @@
+[project]
+name = "marimo-1ere-explo-duckdb"
+version = "0.1.0"
+description = "1ère explo pour découvrir DuckDB 🦆 à l'aide des données bixi 🚲 & Marimo"
+readme = "README.md"
+authors = ["Antoine Giraud"]
+requires-python = ">=3.13"
+dependencies = [
+    "marimo[sql]>=0.19.6",
+    "folium>=0.20.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.14",
+]
