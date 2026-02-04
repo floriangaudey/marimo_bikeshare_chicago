@@ -1,8 +1,8 @@
-# TD découverte de DuckDB 🦆 avec Marimo & les données bixi 🚲
+# TD Réduction de dimensions 🦆 avec Marimo & les données bixi 🚲
 
-Ce TD vous guide dans l’exploration de données réelles :
+Ce TD vous guide dans la réduction de dimensions :
 - Statuts des **stations** bixi via le feed GBFS (JSON)
-- **Secteurs** municipaux de Montréal (GeoJSON)
+- **Secteurs** de Chicago (GeoJSON)
 - **Locations** journalières des vélos (Parquet)
 
 Vous utiliserez **DuckDB** et son extension **spatial**.
@@ -42,7 +42,7 @@ Une fois connecté, effectuez
 
 #### Clone & setup local du projet
 
-- `git clone https://github.com/AntoineGiraud/marimo_chicago_rentals.git`
+- `git clone https://github.com/floriangaudey/marimo_bikeshare_chicago.git`
 - `cd marimo_chicago_rentals` <em style="color: grey">se déplacer dans le dossier récupéré avec git</em>
 - `uv sync`
   - télécharge **python** <em style="color: grey">si non présent</em>
